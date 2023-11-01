@@ -26,6 +26,7 @@ from models.dimp_heads import dimp_norm_init_shannon_hingeL2Loss
 
 from utils import set_gpu, Timer, count_accuracy, check_dir, log
 
+
 def tile(a, dim, n_tile):
     init_dim = a.size(dim)
     repeat_idx = [1] * a.dim()
@@ -34,15 +35,17 @@ def tile(a, dim, n_tile):
     order_index = torch.LongTensor(np.concatenate([init_dim * np.arange(n_tile) + i for i in range(init_dim)]))
     return torch.index_select(a, dim, order_index.to(a.device))
 
+
 def str2bool(v):
     if isinstance(v, bool):
-       return v
+        return v
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 def one_hot(indices, depth):
     """
@@ -56,10 +59,11 @@ def one_hot(indices, depth):
     """
 
     encoded_indicies = torch.zeros(indices.size() + torch.Size([depth])).cuda()
-    index = indices.view(indices.size()+torch.Size([1]))
-    encoded_indicies = encoded_indicies.scatter_(1,index,1)
-    
+    index = indices.view(indices.size() + torch.Size([1]))
+    encoded_indicies = encoded_indicies.scatter_(1, index, 1)
+
     return encoded_indicies
+
 
 def get_model(options):
     # Choose the embedding network
@@ -101,9 +105,9 @@ def get_model(options):
                 network = resnet12(avg_pool=True, drop_rate=0.1, dropblock_size=2, avgpool_param=2).cuda()
                 network = torch.nn.DataParallel(network)
     else:
-        print ("Cannot recognize the network type")
-        assert(False)
-        
+        print("Cannot recognize the network type")
+        assert (False)
+
     # Choose the classification head
     if options.head == 'ProtoNet':
         cls_head = ClassificationHead(base_learner='ProtoNet').cuda()
@@ -114,10 +118,13 @@ def get_model(options):
     elif options.head == 'SVM':
         cls_head = ClassificationHead(base_learner='SVM-CS').cuda()
     elif options.head == 'FIML':
-        cls_head = dimp_norm_init_shannon_hingeL2Loss(num_iter=options.steepest_descent_iter, norm_feat=options.norm_feat,
-                                                      entropy_weight=options.entropy_weight, entropy_temp=options.entropy_temp,
+        cls_head = dimp_norm_init_shannon_hingeL2Loss(num_iter=options.steepest_descent_iter,
+                                                      norm_feat=options.norm_feat,
+                                                      entropy_weight=options.entropy_weight,
+                                                      entropy_temp=options.entropy_temp,
                                                       learn_entropy_weights=options.learn_entropy_weights,
-                                                      learn_entropy_temp=options.learn_entropy_temp, learn_weights=options.learn_weights,
+                                                      learn_entropy_temp=options.learn_entropy_temp,
+                                                      learn_weights=options.learn_weights,
                                                       pos_weight=options.pos_weight, neg_weight=options.neg_weight,
                                                       learn_slope=options.learn_slope,
                                                       pos_lrelu_slope=options.pos_lrelu_slope,
@@ -125,10 +132,11 @@ def get_model(options):
                                                       learn_spatial_weight=options.learn_inner_spatial_weight,
                                                       dc_factor=options.dc_factor)
     else:
-        print ("Cannot recognize the dataset type")
-        assert(False)
-        
+        print("Cannot recognize the dataset type")
+        assert (False)
+
     return (network, cls_head)
+
 
 def get_dataset(options):
     # Choose the embedding network
@@ -153,10 +161,11 @@ def get_dataset(options):
         dataset_val = FC100(phase='val')
         data_loader = FewShotDataloader
     else:
-        print ("Cannot recognize the dataset type")
-        assert(False)
-        
+        print("Cannot recognize the dataset type")
+        assert (False)
+
     return (dataset_train, dataset_val, data_loader)
+
 
 if __name__ == '__main__':
 
@@ -165,47 +174,45 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--num-epoch', type=int, default=60,
-                            help='number of training epochs')
+                        help='number of training epochs')
     parser.add_argument('--save-epoch', type=int, default=10,
-                            help='frequency of model saving')
+                        help='frequency of model saving')
     parser.add_argument('--train-shot', type=int, default=15,
-                            help='number of support examples per training class')
+                        help='number of support examples per training class')
     parser.add_argument('--val-shot', type=int, default=5,
-                            help='number of support examples per validation class')
+                        help='number of support examples per validation class')
     parser.add_argument('--train-query', type=int, default=6,
-                            help='number of query examples per training class')
+                        help='number of query examples per training class')
 
     # val episodes bhi ek param hai
     parser.add_argument('--val-episode', type=int, default=2000,
-                            help='number of episodes per validation')
+                        help='number of episodes per validation')
     parser.add_argument('--val-query', type=int, default=15,
-                            help='number of query examples per validation class')
+                        help='number of query examples per validation class')
     parser.add_argument('--train-way', type=int, default=5,
-                            help='number of classes in one training episode')
+                        help='number of classes in one training episode')
     parser.add_argument('--test-way', type=int, default=5,
-                            help='number of classes in one test (or validation) episode')
+                        help='number of classes in one test (or validation) episode')
     parser.add_argument('--save-path', default='./experiments/exp_1')
     parser.add_argument('--tensorboard-dir', default='./experiments/exp_1/tensorboard')
     parser.add_argument('--gpu', default='0, 1, 2, 3')
     parser.add_argument('--network', type=str, default='ResNet_DC',
-                            help='choose which embedding network to use. ProtoNet, R2D2, ResNet')
+                        help='choose which embedding network to use. ProtoNet, R2D2, ResNet')
 
     parser.add_argument('--head', type=str, default='FIML',
-                            help='choose which classification head to use')
+                        help='choose which classification head to use')
     parser.add_argument('--train-loss', type=str, default='CrossEntropy',
                         help='choose which loss to use. SmoothedCrossEntropy, CrossEntropy')
     parser.add_argument('--dataset', type=str, default='miniImageNet',
-                            help='choose which classification head to use. miniImageNet, tieredImageNet, CIFAR_FS, FC100')
+                        help='choose which classification head to use. miniImageNet, tieredImageNet, CIFAR_FS, FC100')
     parser.add_argument('--episodes-per-batch', type=int, default=16,
-                            help='number of episodes per batch')
+                        help='number of episodes per batch')
 
     # the eps parameter is for label smoothing
     parser.add_argument('--eps', type=float, default=0.0,
-                            help='epsilon of label smoothing')
+                        help='epsilon of label smoothing')
     parser.add_argument('--steepest-descent-iter', type=int, default=5, help='number of steepest descent iterations')
     parser.add_argument('--load-path', type=str, default='./experiments/exp_1', help='load path')
-
-
 
     parser.add_argument('--norm-feat', type=int, default=1,
                         help='to normalize the features or not. 1, 0')
@@ -222,8 +229,10 @@ if __name__ == '__main__':
     # This is going to be used for the different way of calling the the heads encapsulation
     parser.add_argument('--algorithm-type', type=str, default='DiMP',
                         help='Are we using the DiMP class of algos or other: DiMP, Other')
-    parser.add_argument('--smooth-label-base-learner', type=str, default='False', help='whether to use the smooth labels inside the base learner or not')
-    parser.add_argument('--smooth-label-factor-base-learner', type=float, default=0.0, help='smooth factor for label smoothing in base learner')
+    parser.add_argument('--smooth-label-base-learner', type=str, default='False',
+                        help='whether to use the smooth labels inside the base learner or not')
+    parser.add_argument('--smooth-label-factor-base-learner', type=float, default=0.0,
+                        help='smooth factor for label smoothing in base learner')
 
     parser.add_argument('--aws', type=int, default=0,
                         help='whether we are using aws or not')
@@ -274,9 +283,9 @@ if __name__ == '__main__':
         dataset=dataset_train,
         nKnovel=opt.train_way,
         nKbase=0,
-        nExemplars=opt.train_shot, # num training examples per novel category
-        nTestNovel=opt.train_way * opt.train_query, # num test examples for all the novel categories
-        nTestBase=0, # num test examples for all the base categories
+        nExemplars=opt.train_shot,  # num training examples per novel category
+        nTestNovel=opt.train_way * opt.train_query,  # num test examples for all the novel categories
+        nTestBase=0,  # num test examples for all the base categories
         batch_size=opt.episodes_per_batch,
         num_workers=4,
         epoch_size=opt.episodes_per_batch * 1000,  # num of batches per epoch
@@ -287,12 +296,12 @@ if __name__ == '__main__':
         dataset=dataset_val,
         nKnovel=opt.test_way,
         nKbase=0,
-        nExemplars=opt.val_shot, # num training examples per novel category
-        nTestNovel=opt.val_query * opt.test_way, # num test examples for all the novel categories
-        nTestBase=0, # num test examples for all the base categories
+        nExemplars=opt.val_shot,  # num training examples per novel category
+        nTestNovel=opt.val_query * opt.test_way,  # num test examples for all the novel categories
+        nTestBase=0,  # num test examples for all the base categories
         batch_size=1,
         num_workers=0,
-        epoch_size=1 * opt.val_episode, # num of batches per epoch
+        epoch_size=1 * opt.val_episode,  # num of batches per epoch
     )
 
     if opt.aws == 1:
@@ -338,19 +347,19 @@ if __name__ == '__main__':
     else:
         fusion_mod = fuse_score(dc_factor=dc_factor, weight_learn=opt.learn_fusion_weight).cuda()
 
-
-    if opt.optimizer=='SGD':
+    if opt.optimizer == 'SGD':
         optimizer = torch.optim.SGD([{'params': embedding_net.parameters()},
-                                         {'params': cls_head.parameters()},
-                                         {'params': fusion_mod.parameters()}], lr=opt.learn_rate, momentum=0.9, \
-                                        weight_decay=5e-4, nesterov=True)
+                                     {'params': cls_head.parameters()},
+                                     {'params': fusion_mod.parameters()}], lr=opt.learn_rate, momentum=0.9, \
+                                    weight_decay=5e-4, nesterov=True)
 
     else:
         optimizer = torch.optim.Adam([{'params': embedding_net.parameters()},
-                                          {'params': cls_head.parameters()},
-                                          {'params': fusion_mod.parameters()}], lr=opt.learn_rate)
+                                      {'params': cls_head.parameters()},
+                                      {'params': fusion_mod.parameters()}], lr=opt.learn_rate)
 
-    lambda_epoch = lambda e: 1.0 if e < 20 + opt.stop_class_iter else (0.06 if e < 40 + opt.stop_class_iter else 0.012 if e < 50 + opt.stop_class_iter else (0.0024))
+    lambda_epoch = lambda e: 1.0 if e < 20 + opt.stop_class_iter else (
+        0.06 if e < 40 + opt.stop_class_iter else 0.012 if e < 50 + opt.stop_class_iter else (0.0024))
     # lambda_epoch = lambda e: 1.0 if e < 10 + opt.stop_class_iter else (0.3 if e < 20 + opt.stop_class_iter
     #                                                                    else 0.1 if e < 30 + opt.stop_class_iter
     #                                                                    else 0.06 if e < 40 + opt.stop_class_iter
@@ -372,7 +381,7 @@ if __name__ == '__main__':
     val_loader = dloader_val.get_dataloader()
 
     # if opt.luke_warm == 'True' and opt.classification == 'True':
-        # num_epoch = opt.num_epoch + opt.stop_class_iter
+    # num_epoch = opt.num_epoch + opt.stop_class_iter
     # else:
     num_epoch = opt.num_epoch
 
@@ -386,17 +395,16 @@ if __name__ == '__main__':
         # Train on the training split
         lr_scheduler.step()
 
-
         # Fetch the current epoch's learning rate
         epoch_learning_rate = 0.1
         for param_group in optimizer.param_groups:
             epoch_learning_rate = param_group['lr']
-            
+
         log(log_file_path, 'Train Epoch: {}\tLearning Rate: {:.4f}'.format(
-                            epoch, epoch_learning_rate))
-        
+            epoch, epoch_learning_rate))
+
         _, _ = [x.train() for x in (embedding_net, cls_head)]
-        
+
         train_accuracies = []
         train_losses = []
 
@@ -425,7 +433,6 @@ if __name__ == '__main__':
 
             # class_score = classifier(emb_support)
 
-
             if not opt.DC_query_inner:
                 emb_query, _ = embedding_net(data_query.reshape([-1] + list(data_query.shape[-3:])))
                 emb_query = emb_query.reshape(opt.episodes_per_batch, train_n_query, -1)
@@ -440,21 +447,22 @@ if __name__ == '__main__':
                 # logit_query, inner_losses = cls_head(emb_query, emb_support, labels_support, opt.train_way, opt.train_shot *
                 #                            (opt.dropout_samples_per_class_train+1+offset_shot_support))
                 logit_query, inner_losses = cls_head(emb_query, emb_support, labels_support, opt.train_way,
-                                                     int(emb_support.shape[1]/opt.train_way))
+                                                     int(emb_support.shape[1] / opt.train_way))
             else:
                 # logit_query = cls_head(emb_query, emb_support, labels_support, opt.train_way,
                 #                                      opt.train_shot*(opt.dropout_samples_per_class_train+1))
                 logit_query = cls_head(emb_query, emb_support, labels_support, opt.train_way,
-                                       int(emb_support.shape[1]/opt.train_way))
+                                       int(emb_support.shape[1] / opt.train_way))
             if opt.train_loss == 'SmoothedCrossEntropy':
 
                 if opt.train_query_loss == 1 or opt.train_query_loss == 2:
-                    #labels_query = labels_query.view(labels_query.shape[0], labels_query.shape[1]/dc_factor, -1)
+                    # labels_query = labels_query.view(labels_query.shape[0], labels_query.shape[1]/dc_factor, -1)
                     labels_query = labels_query[:, range(0, labels_query.shape[1], dc_factor)]
                     logit_query[-1] = fusion_mod(logit_query[-1])
 
                 smoothed_one_hot = one_hot(labels_query.reshape(-1), opt.train_way)
-                smoothed_one_hot = smoothed_one_hot * (1 - opt.eps) + (1 - smoothed_one_hot) * opt.eps / (opt.train_way - 1)
+                smoothed_one_hot = smoothed_one_hot * (1 - opt.eps) + (1 - smoothed_one_hot) * opt.eps / (
+                            opt.train_way - 1)
 
                 if opt.algorithm_type == 'Other':
                     log_prb = F.log_softmax(logit_query.reshape(-1, opt.train_way), dim=1)
@@ -468,12 +476,11 @@ if __name__ == '__main__':
                 else:
                     loss = x_entropy(logit_query[-1].reshape(-1, opt.train_way), labels_query.reshape(-1))
 
-
             if opt.algorithm_type == 'Other':
                 acc = count_accuracy(logit_query.reshape(-1, opt.train_way), labels_query.reshape(-1))
             else:
-                #labels_query = labels_query[:, :query_num_samples]
-                #logit_query[-1] = logit_query[-1][:, :query_num_samples]
+                # labels_query = labels_query[:, :query_num_samples]
+                # logit_query[-1] = logit_query[-1][:, :query_num_samples]
 
                 acc = count_accuracy(logit_query[-1].reshape(-1, opt.train_way), labels_query.reshape(-1))
 
@@ -483,15 +490,14 @@ if __name__ == '__main__':
             if i % 100 == 0:
                 train_acc_avg = np.mean(np.array(train_accuracies))
                 print(log_file_path)
-                log(log_file_path, 'Train Epoch: {}\tBatch: [{}/{}]\tLoss: {:.4f}\tAccuracy: {:.2f} % ({:.2f} %)'.format(
-                            epoch, i, len(dloader_train), loss.item(), train_acc_avg, acc))
-
+                log(log_file_path,
+                    'Train Epoch: {}\tBatch: [{}/{}]\tLoss: {:.4f}\tAccuracy: {:.2f} % ({:.2f} %)'.format(
+                        epoch, i, len(dloader_train), loss.item(), train_acc_avg, acc))
 
                 # if opt.debug == 'True':
                 #     print("The sgd losses:")
                 #     for i_iter in range(len(inner_losses)):
                 #         print("Iter " + str(i_iter) + ": " + str(inner_losses[i_iter]))
-
 
             optimizer.zero_grad()
             loss.backward()
@@ -508,7 +514,7 @@ if __name__ == '__main__':
         #
         with torch.autograd.no_grad():
             for i, batch in enumerate(val_loader):
-            # for i, batch in enumerate(tqdm(dloader_val(epoch)), 1):
+                # for i, batch in enumerate(tqdm(dloader_val(epoch)), 1):
                 data_support, labels_support, data_query, labels_query, _, _, _ = [x.cuda() for x in batch]
 
                 if opt.DC_support:
@@ -539,11 +545,11 @@ if __name__ == '__main__':
 
                 if opt.algorithm_type == 'DiMP':
                     logit_query, inner_losses = cls_head(emb_query, emb_support, labels_support, opt.test_way,
-                                                         int(emb_support.shape[1]/opt.test_way))
+                                                         int(emb_support.shape[1] / opt.test_way))
 
                     if opt.val_fusion_module == 1 or opt.val_fusion_module == 2:
-                        #labels_query = labels_query.view(labels_query.shape[0], labels_query.shape[1]/dc_factor, -1)
-                        labels_query = labels_query[:,range(0, labels_query.shape[1], dc_factor)]
+                        # labels_query = labels_query.view(labels_query.shape[0], labels_query.shape[1]/dc_factor, -1)
+                        labels_query = labels_query[:, range(0, labels_query.shape[1], dc_factor)]
                         logit_query[-1] = fusion_mod(logit_query[-1])
 
                     loss = x_entropy(logit_query[-1].reshape(-1, opt.test_way), labels_query.reshape(-1))
@@ -552,17 +558,16 @@ if __name__ == '__main__':
                     # logit_query = cls_head(emb_query, emb_support, labels_support, opt.test_way,
                     #                        opt.val_shot * (opt.dropout_samples_per_class_val + 1))
                     logit_query = cls_head(emb_query, emb_support, labels_support, opt.test_way,
-                                           int(emb_support.shape[1]/opt.test_way))
+                                           int(emb_support.shape[1] / opt.test_way))
                     if opt.val_fusion_module == 1 or opt.val_fusion_module == 2:
-                        labels_query = labels_query[:,range(0, labels_query.shape[1], dc_factor)]
+                        labels_query = labels_query[:, range(0, labels_query.shape[1], dc_factor)]
                         logit_query[-1] = fusion_mod(logit_query[-1])
                     loss = x_entropy(logit_query.reshape(-1, opt.test_way), labels_query.reshape(-1))
                     acc = count_accuracy(logit_query.reshape(-1, opt.test_way), labels_query.reshape(-1))
 
-
                 val_accuracies.append(acc.item())
                 val_losses.append(loss.item())
-            
+
         val_acc_avg = np.mean(np.array(val_accuracies))
         val_acc_ci95 = 1.96 * np.std(np.array(val_accuracies)) / np.sqrt(opt.val_episode)
 
@@ -570,23 +575,23 @@ if __name__ == '__main__':
 
         if val_acc_avg > max_val_acc:
             max_val_acc = val_acc_avg
-            torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()},\
+            torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()}, \
                        os.path.join(opt.save_path, 'best_model.pth'))
-            log(log_file_path, 'Validation Epoch: {}\t\t\tLoss: {:.4f}\tAccuracy: {:.2f} ± {:.2f} % (Best)'\
-                  .format(epoch, val_loss_avg, val_acc_avg, val_acc_ci95))
+            log(log_file_path, 'Validation Epoch: {}\t\t\tLoss: {:.4f}\tAccuracy: {:.2f} ± {:.2f} % (Best)' \
+                .format(epoch, val_loss_avg, val_acc_avg, val_acc_ci95))
         else:
-            log(log_file_path, 'Validation Epoch: {}\t\t\tLoss: {:.4f}\tAccuracy: {:.2f} ± {:.2f} %'\
-                  .format(epoch, val_loss_avg, val_acc_avg, val_acc_ci95))
+            log(log_file_path, 'Validation Epoch: {}\t\t\tLoss: {:.4f}\tAccuracy: {:.2f} ± {:.2f} %' \
+                .format(epoch, val_loss_avg, val_acc_avg, val_acc_ci95))
 
         # print("The sgd losses (val):")
         # for i_iter in range(len(inner_losses)):
         #     print("Iter " + str(i_iter) + ": " + str(inner_losses[i_iter]))
 
-        torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()}\
+        torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()} \
                    , os.path.join(opt.save_path, 'last_epoch.pth'))
 
         if epoch % opt.save_epoch == 0:
-            torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()}\
+            torch.save({'embedding': embedding_net.state_dict(), 'head': cls_head.state_dict()} \
                        , os.path.join(opt.save_path, 'epoch_{}.pth'.format(epoch)))
 
         log(log_file_path, 'Elapsed Time: {}/{}\n'.format(timer.measure(), timer.measure(epoch / float(opt.num_epoch))))

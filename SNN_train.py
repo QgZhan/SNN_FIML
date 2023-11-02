@@ -17,7 +17,7 @@ from models.fusion import fuse_prob, fuse_score
 from models.classification_heads import ClassificationHead
 from models.R2D2_embedding import R2D2Embedding
 from models.protonet_embedding import ProtoNetEmbedding
-from models.ResNet12_embedding import resnet12
+from models.Spiking_ResNet12_embedding import resnet12
 from models.WideResNet28_10_embedding import WideResNet
 from models.semantic_classifier import SemanticClassifier
 from tensorboardX import SummaryWriter
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                         help='choose which loss to use. SmoothedCrossEntropy, CrossEntropy')
     parser.add_argument('--dataset', type=str, default='miniImageNet',
                         help='choose which classification head to use. miniImageNet, tieredImageNet, CIFAR_FS, FC100')
-    parser.add_argument('--episodes-per-batch', type=int, default=16,
+    parser.add_argument('--episodes-per-batch', type=int, default=1,
                         help='number of episodes per batch')
 
     # the eps parameter is for label smoothing
@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--optimizer', type=str, default='SGD', help='optimizer ADAM/SGD')
 
-    parser.add_argument('--learn-rate', type=float, default=0.1, help='starting learning rate for the backbone ()')
+    parser.add_argument('--learn-rate', type=float, default=0.05, help='starting learning rate for the backbone ()')
     parser.add_argument('--debug', type=str, default='True',
                         help='Whether we are debugging or not. False, True')
 
@@ -250,10 +250,10 @@ if __name__ == '__main__':
     parser.add_argument('--learn-slope', type=str2bool, default=True, help='whether to learn relu slope')
 
     # dense classification
-    parser.add_argument('--DC-support', type=str2bool, default=True,
+    parser.add_argument('--DC-support', type=str2bool, default=False,
                         help='whether to use dense classification at support level')
 
-    parser.add_argument('--DC-query-inner', type=str2bool, default=True,
+    parser.add_argument('--DC-query-inner', type=str2bool, default=False,
                         help='whether to use dense classification at query level')
 
     parser.add_argument('--train-query-loss', type=int, default=1,
@@ -387,8 +387,8 @@ if __name__ == '__main__':
 
     # loss * opt.few_shot_loss_weight + loss_class * opt.classifier_loss_weight
 
-    fs_loss_wt = opt.few_shot_loss_weight
-    cls_loss_wt = opt.classifier_loss_weight
+    # fs_loss_wt = opt.few_shot_loss_weight
+    # cls_loss_wt = opt.classifier_loss_weight
 
     for epoch in range(1, num_epoch + 1):
 

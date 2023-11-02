@@ -27,7 +27,7 @@ from pdb import set_trace as breakpoint
 
 
 #_MINI_IMAGENET_DATASET_DIR = '/scratch_net/minnow_second/data/few-shot/miniImageNet'
-_MINI_IMAGENET_DATASET_DIR = '/home/ardhendu/Data/MetaOptNet/miniImageNet'
+_MINI_IMAGENET_DATASET_DIR = '/data/Datasets/WBCDATA/miniImageNet'
 #_MINI_IMAGENET_DATASET_DIR = '/home/ubuntu/data/MetaOptNet/Datasets/miniImageNet'
 
 def buildLabelIndex(labels):

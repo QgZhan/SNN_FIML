@@ -159,7 +159,7 @@ class GNSteepestDescentShannonEntropy(nn.Module):
         losses = 0.5*(res * res).sum()
         entropy_weight = self.entropy_weight / scores_q.shape[1]
         prob_q = torch.softmax(scores_q, dim=-1)
-        ent_loss = entropy_weight * (torch.logsumexp(scores_q, dim=-1) - torch.sum(scores_q * prob_q, dim=-1)).sum()
+        ent_loss = entropy_weight.to(scores_q.device) * (torch.logsumexp(scores_q, dim=-1) - torch.sum(scores_q * prob_q, dim=-1)).sum()
         losses.append(ent_loss)
         return losses
 
@@ -232,7 +232,7 @@ class GNSteepestDescentShannonEntropy(nn.Module):
             step = weights_grad.apply(lambda e: alpha.view([-1 if d==self._parameter_batch_dim else 1 for d in range(e.dim())]) * e)
 
             if self.compute_losses:
-                losses.append(self._compute_loss(r, scores_q))
+                losses.append(self._compute_loss(r.to(scores_q.device), scores_q))
 
             # Add step to parameter
             meta_parameter = meta_parameter - step

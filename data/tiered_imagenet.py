@@ -29,7 +29,7 @@ from pdb import set_trace as breakpoint
 # Set the appropriate paths of the datasets here.
 #_TIERED_IMAGENET_DATASET_DIR = '/scratch_net/minnow_second/data/few-shot/tiered-imagenet/'
 #_TIERED_IMAGENET_DATASET_DIR = '/home/ardhendu/Data/MetaOptNet/tiered-imagenet/'
-_TIERED_IMAGENET_DATASET_DIR = '/home/ubuntu/data/MetaOptNet/Datasets/tiered-imagenet/'
+_TIERED_IMAGENET_DATASET_DIR = '/data/Datasets/zhan/materials/tiered-imagenet'
 
 def buildLabelIndex(labels):
     label2inds = {}
